@@ -14,12 +14,12 @@ from flask_login import (
     logout_user,
 )
 from flask_sqlalchemy import SQLAlchemy
-
-# Import your forms from the forms.py
-from forms import CommentForm, CreatePostForm, LoginForm, RegisterForm
 from sqlalchemy import Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from werkzeug.security import check_password_hash, generate_password_hash
+
+# Import your forms from the forms.py
+from forms import CommentForm, CreatePostForm, LoginForm, RegisterForm
 
 """
 Make sure the required packages are installed: 
@@ -111,6 +111,7 @@ gravatar = Gravatar(
     use_ssl=False,
     base_url=None,
 )
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -279,8 +280,5 @@ def about():
 def contact():
     return render_template("contact.html", user=current_user)
 
-
-if __name__ == "__main__":
-    app.run(debug=True, port=5002)
-if __name__ == "__main__":
-    app.run(debug=True, port=5002)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
