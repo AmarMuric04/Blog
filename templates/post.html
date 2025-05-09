@@ -1,5 +1,5 @@
-{% from "bootstrap5/form.html" import render_form %} {% block content %}
-{% include "header.html" %}
+{% from "bootstrap5/form.html" import render_form %} {% block content %} {%
+include "header.html" %}
 
 <!-- Page Header-->
 <header class="masthead" style="background-image: url('{{post.img_url}}')">
@@ -20,15 +20,11 @@
   </div>
 </header>
 
-<!-- Post Content -->
 <article>
   <div class="container px-4 px-lg-5">
     <div class="row gx-4 gx-lg-5 justify-content-center">
       <div class="col-md-10 col-lg-8 col-xl-7">
-        {{ post.body|safe }}
-        <!--TODO: Only show Edit Post button if user id is 1 (admin user) -->
-
-        {% if user.name == post.author %}
+        {{ post.body|safe }} {% if user.name == post.author %}
         <div class="d-flex justify-content-end mb-4">
           <a
             class="btn btn-primary float-right"
@@ -41,8 +37,9 @@
         <!-- Comments Area -->
         <!-- TODO: Add a CKEditor for commenting below -->
         <div class="comment">
-        {{ ckeditor.load() }} {{ ckeditor.config(name='body') }} {{
-        render_form(form, novalidate=True, button_map={"submit": "primary"}) }}
+          {{ ckeditor.load() }} {{ ckeditor.config(name='body') }} {{
+          render_form(form, novalidate=True, button_map={"submit": "primary"})
+          }}
           <!-- TODO: Show all the comments on a post -->
           <ul class="commentList">
             {% for comment in post.comments %}

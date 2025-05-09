@@ -1,6 +1,10 @@
+import os
+import smtplib
 from datetime import date
 from functools import wraps
 
+import bleach
+from dotenv import load_dotenv
 from flask import Flask, abort, flash, redirect, render_template, url_for
 from flask_bootstrap import Bootstrap5
 from flask_ckeditor import CKEditor
@@ -18,21 +22,12 @@ from sqlalchemy import Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from werkzeug.security import check_password_hash, generate_password_hash
 
-# Import your forms from the forms.py
-from forms import CommentForm, CreatePostForm, LoginForm, RegisterForm
+from forms import CommentForm, ContactForm, CreatePostForm, LoginForm, RegisterForm
 
-"""
-Make sure the required packages are installed: 
-Open the Terminal in PyCharm (bottom left). 
+load_dotenv()
 
-On Windows type:
-python -m pip install -r requirements.txt
-
-On MacOS type:
-pip3 install -r requirements.txt
-
-This will install the packages from the requirements.txt for this project.
-"""
+EMAIL_USER = os.getenv("EMAIL_USER")
+EMAIL_PASS = os.getenv("EMAIL_PASS")
 
 
 def only_admins(func):
@@ -51,11 +46,9 @@ app.config["SECRET_KEY"] = "8BYkEfBA6O6donzWlSihBXox7C0sKR6b"
 ckeditor = CKEditor(app)
 Bootstrap5(app)
 
-# TODO: Configure Flask-Login
 login_manager = LoginManager()
 
 
-# CREATE DATABASE
 class Base(DeclarativeBase):
     pass
 
@@ -66,7 +59,6 @@ db.init_app(app)
 login_manager.init_app(app)
 
 
-# CONFIGURE TABLES
 class BlogPost(db.Model):
     __tablename__ = "blog_posts"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -80,7 +72,6 @@ class BlogPost(db.Model):
     comments = relationship("Comment", back_populates="blog")
 
 
-# TODO: Create a User table for all your registered users.
 class User(UserMixin, db.Model):
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -122,7 +113,6 @@ with app.app_context():
     db.create_all()
 
 
-# TODO: Use Werkzeug to hash the user's password when creating a new user.
 @app.route("/register", methods=["POST", "GET"])
 def register():
     form = RegisterForm()
@@ -151,7 +141,6 @@ def register():
     return render_template("register.html", form=form, user=current_user)
 
 
-# TODO: Retrieve a user from the database based on their email.
 @app.route("/login", methods=["POST", "GET"])
 def login():
     form = LoginForm()
@@ -191,7 +180,6 @@ def get_all_posts():
     return render_template("index.html", all_posts=posts, user=current_user)
 
 
-# TODO: Allow logged-in users to comment on posts
 @app.route("/post/<int:post_id>", methods=["GET", "POST"])
 def show_post(post_id):
     form = CommentForm()
@@ -216,7 +204,6 @@ def show_post(post_id):
     )
 
 
-# TODO: Use a decorator so only an admin user can create a new post
 @app.route("/new-post", methods=["GET", "POST"])
 @only_admins
 def add_new_post():
@@ -236,7 +223,6 @@ def add_new_post():
     return render_template("make-post.html", form=form, user=current_user)
 
 
-# TODO: Use a decorator so only an admin user can edit a post
 @app.route("/edit-post/<int:post_id>", methods=["GET", "POST"])
 @only_admins
 def edit_post(post_id):
@@ -261,7 +247,6 @@ def edit_post(post_id):
     )
 
 
-# TODO: Use a decorator so only an admin user can delete a post
 @app.route("/delete/<int:post_id>")
 @only_admins
 def delete_post(post_id):
@@ -276,9 +261,28 @@ def about():
     return render_template("about.html", user=current_user)
 
 
-@app.route("/contact")
+@app.route("/contact", methods=["GET", "POST"])
 def contact():
-    return render_template("contact.html", user=current_user)
+    form = ContactForm()
+    if form.validate_on_submit():
+        name = form.name.data
+        email = form.email.data
+        message = form.message.data
+
+        with smtplib.SMTP("smtp.gmail.com") as connection:
+            cleaned_message = bleach.clean(message, tags=[], attributes={}, strip=True)
+
+            connection.starttls()
+            connection.login(user=EMAIL_USER, password=EMAIL_PASS)
+            connection.sendmail(
+                from_addr=EMAIL_USER,
+                to_addrs="muricamar2004@gmail.com",
+                msg=f"Subject: Message from {name}\n\n{cleaned_message}\n\nReply to: {email}",
+            )
+
+        return redirect(url_for("get_all_posts"))
+
+    return render_template("contact.html", form=form, user=current_user)
 
 
 if __name__ == "__main__":
