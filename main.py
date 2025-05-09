@@ -4,6 +4,7 @@ from datetime import date
 from functools import wraps
 
 import bleach
+import yagmail
 from dotenv import load_dotenv
 from flask import Flask, abort, flash, redirect, render_template, url_for
 from flask_bootstrap import Bootstrap5
@@ -269,16 +270,16 @@ def contact():
         email = form.email.data
         message = form.message.data
 
-        with smtplib.SMTP("smtp.gmail.com") as connection:
-            cleaned_message = bleach.clean(message, tags=[], attributes={}, strip=True)
-
-            connection.starttls()
-            connection.login(user=EMAIL_USER, password=EMAIL_PASS)
-            connection.sendmail(
-                from_addr=EMAIL_USER,
-                to_addrs="muricamar2004@gmail.com",
-                msg=f"Subject: Message from {name}\n\n{cleaned_message}\n\nReply to: {email}",
+        try:
+            yag = yagmail.SMTP(EMAIL_USER, EMAIL_PASS)
+            yag.send(
+                to="muricamar2004@gmail.com",
+                subject=f"Message from {name}",
+                contents=f"{message}\nSend them an email @ {email}",
             )
+            print("Email sent successfully!")
+        except Exception as e:
+            print(f"Error sending email: {e}")
 
         return redirect(url_for("get_all_posts"))
 
@@ -286,4 +287,4 @@ def contact():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    app.run(host="0.0.0.0", port=3000, debug=True)
